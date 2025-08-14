@@ -5,8 +5,25 @@ using TaskManagerAPI.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Serilog;
+using Serilog.Events;
 
 var builder = WebApplication.CreateBuilder(args);
+
+//подключаем Serilog до создания сервисов
+var logFilePath = @"C:\Logs\log.txt";
+Directory.CreateDirectory(Path.GetDirectoryName(logFilePath)!);
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Debug()   //в консоль все
+    .WriteTo.Console(restrictedToMinimumLevel: LogEventLevel.Debug)
+    .WriteTo.File(
+        logFilePath,
+        rollingInterval: RollingInterval.Day,
+        restrictedToMinimumLevel: LogEventLevel.Debug) // в файл пишем только Warning и выше
+    .CreateLogger();
+
+builder.Host.UseSerilog();
 
 //controllers
 builder.Services.AddControllers();
@@ -84,9 +101,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll", policy =>
     {
         policy
-            .AllowAnyOrigin()
-            .AllowAnyMethod()
-            .AllowAnyHeader();
+            .AllowAnyOrigin()   //разрешает запросы с любого домена
+            .AllowAnyMethod()   //разрешает все HTTP-методы (GET, POST, PUT и тд)
+            .AllowAnyHeader();  //разрешает все заголовки (Content-Type, Authorization и тд)
     });
 });
 
